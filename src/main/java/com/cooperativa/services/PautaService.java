@@ -18,4 +18,8 @@ public class PautaService {
 		Optional<Pauta> findById = pautaRepository.findById(id);
 		return findById.orElse(null);
 	}
+
+	public Pauta insertPauta(Pauta obj) {
+		return pautaRepository.save(obj);
+	}
 }
