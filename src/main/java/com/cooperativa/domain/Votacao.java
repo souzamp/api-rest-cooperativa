@@ -14,14 +14,14 @@ public class Votacao implements Serializable {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Integer id;
-	private Integer cpfAssociado;
+	private String cpfAssociado;
 	private String voto;
 	private Integer idPauta;
 
 	public Votacao() {
 	}
 
-	public Votacao(Integer id, Integer cpfAssociado, String voto, Integer idPauta) {
+	public Votacao(Integer id, String cpfAssociado, String voto, Integer idPauta) {
 		super();
 		this.id = id;
 		this.cpfAssociado = cpfAssociado;
@@ -37,11 +37,11 @@ public class Votacao implements Serializable {
 		this.id = id;
 	}
 
-	public Integer getCpfAssociado() {
+	public String getCpfAssociado() {
 		return cpfAssociado;
 	}
 
-	public void setCpfAssociado(Integer cpfAssociado) {
+	public void setCpfAssociado(String cpfAssociado) {
 		this.cpfAssociado = cpfAssociado;
 	}
 
