@@ -3,36 +3,63 @@ package com.cooperativa.services;
 import java.util.List;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import com.cooperativa.domain.Pauta;
+import com.cooperativa.domain.Response;
 import com.cooperativa.domain.ResponseResultado;
 import com.cooperativa.domain.Votacao;
+import com.cooperativa.repositories.PautaRepository;
 import com.cooperativa.repositories.VotacaoRepository;
+import com.cooperativa.resources.PautaResource;
+import com.cooperativa.resources.exception.StandardError;
 
 @Service
 public class VotacaoService {
+	private static Logger logger = LoggerFactory.getLogger(PautaResource.class);
 
-	@Autowired
 	private VotacaoRepository votacaoRepository;
+	@Autowired
+	private PautaRepository pautaRepository;
 
-	public Boolean insertVoto(Votacao obj) {
-		Boolean flagCpf = true;
-		Optional<Votacao> votacao = votacaoRepository.findByCpf(obj.getCpfAssociado());
-		if (!votacao.isPresent()) {
-			votacaoRepository.save(obj);
-			flagCpf = false;
+	public ResponseEntity<?> insertVoto(Votacao obj) {
+		logger.debug("InsertVoto - begin");
+		try {
+			Optional<Votacao> votacao = votacaoRepository.findByCpf(obj.getCpfAssociado());
+			Response response = new Response();
+			if (!votacao.isPresent()) {
+				votacaoRepository.save(obj);
+
+				response.setMessage("Voto inserido com sucesso!");
+				return ResponseEntity.status(200).body(response);
+			} else {
+				response.setMessage("Associado já votou!");
+				return ResponseEntity.status(202).body(response);
+			}
+
+		} catch (Exception e) {
+			StandardError err = new StandardError(System.currentTimeMillis(), 500, "Internal Server Erro", "", null);
+
+			logger.error("Internal Server Erro.", e);
+			return ResponseEntity.status(500).body(err);
 		}
-		return flagCpf;
 	}
 
 	public ResponseResultado findResuldo(Integer id) {
+		logger.debug("FindResuldo - begin");
+
 		List<Votacao> votacao = votacaoRepository.findResultadoPauta(id);
 		int votoNao = 0;
 		int votoSim = 0;
 		int totalVotos = 0;
 
 		if (!votacao.isEmpty()) {
+			logger.debug("Contabilizando os votos.");
+
 			for (Votacao votacao2 : votacao) {
 				if (votacao2.getVoto().equals("Não")) {
 					votoNao += 1;
@@ -41,13 +68,19 @@ public class VotacaoService {
 				}
 				totalVotos += 1;
 			}
+			Optional<Pauta> pauta = pautaRepository.findById(id);
+
+			logger.debug("Resultado da votação -  Nome da Pauta: " + pauta.get().getPauta() + " | total de votos: "
+					+ totalVotos + " | votos sim: " + votoSim + " | votos não: " + votoNao);
 
 			ResponseResultado responseResultado = new ResponseResultado();
-			responseResultado.setNomePauta("Teste");
+			responseResultado.setNomePauta(pauta.get().getPauta());
 			responseResultado.setTotalVotos(String.valueOf(totalVotos));
 			responseResultado.setVotosSim(String.valueOf(votoSim));
 			responseResultado.setVotosNao(String.valueOf(votoNao));
 			return responseResultado;
+		} else {
+			logger.debug("Resultado não encontrado pelo Id passado.");
 		}
 
 		return null;
