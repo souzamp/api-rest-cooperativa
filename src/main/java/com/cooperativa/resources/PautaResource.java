@@ -17,6 +17,8 @@ import com.cooperativa.resources.exception.StandardError;
 import com.cooperativa.services.PautaService;
 import com.cooperativa.services.VotacaoService;
 
+import io.swagger.annotations.ApiOperation;
+
 @RestController
 @RequestMapping(value = "/pautas")
 public class PautaResource {
@@ -27,6 +29,7 @@ public class PautaResource {
 	@Autowired
 	private VotacaoService serviceVotacao;
 
+	@ApiOperation("Busca por id")
 	@RequestMapping(value = "/{id}", method = RequestMethod.GET)
 	public ResponseEntity<?> findPautaById(@PathVariable("id") Integer id) {
 		logger.debug("FindPautaById - begin.");
@@ -44,6 +47,7 @@ public class PautaResource {
 
 	}
 
+	@ApiOperation("Cria uma pauta")
 	@RequestMapping(method = RequestMethod.POST)
 	public ResponseEntity<?> insert(@RequestBody Pauta obj) {
 		logger.info("Criando uma nova Pauta.");
@@ -62,6 +66,7 @@ public class PautaResource {
 		}
 	}
 
+	@ApiOperation("Insere o voto")
 	@RequestMapping(value = "/{votacao}", method = RequestMethod.POST)
 	public ResponseEntity<?> insertVotacao(@RequestBody Votacao obj) {
 		logger.debug("InsertVotacao - begin.");
@@ -79,6 +84,7 @@ public class PautaResource {
 		}
 	}
 
+	@ApiOperation("Busca resultado por id")
 	@RequestMapping(value = "/resultadoVotacao/{id}", method = RequestMethod.GET)
 	public ResponseEntity<?> resultPauta(@PathVariable Integer id) {
 		logger.debug("ResultPauta - begin");
