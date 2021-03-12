@@ -1,8 +1,5 @@
 package com.cooperativa.resources;
 
-import java.net.URI;
-import java.util.Optional;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,11 +10,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.cooperativa.domain.Pauta;
-import com.cooperativa.domain.Response;
-import com.cooperativa.domain.ResponseResultado;
 import com.cooperativa.domain.Votacao;
 import com.cooperativa.resources.exception.StandardError;
 import com.cooperativa.services.PautaService;
@@ -38,17 +32,8 @@ public class PautaResource {
 		logger.debug("FindPautaById - begin.");
 
 		try {
-			Optional<Pauta> obj = servicePauta.find(id);
-			if (!obj.isPresent()) {
-				StandardError err = new StandardError(System.currentTimeMillis(), HttpStatus.NOT_FOUND, "Not Found",
-						"O servidor não pode encontrar o recurso solicitado.", null);
-
-				logger.debug("Not Found - O servidor não pode encontrar o recurso solicitado.");
-
-				return ResponseEntity.status(HttpStatus.NOT_FOUND).body(err);
-			} else {
-				return ResponseEntity.ok().body(obj);
-			}
+			ResponseEntity<?> response = servicePauta.find(id);
+			return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
 		} catch (Exception e) {
 			StandardError err = new StandardError(System.currentTimeMillis(), HttpStatus.INTERNAL_SERVER_ERROR,
 					"Internal Server Erro", "", null);
@@ -64,23 +49,10 @@ public class PautaResource {
 		logger.info("Criando uma nova Pauta.");
 
 		try {
-			if (obj == null | obj.getPauta() == null) {
-				StandardError err = new StandardError(System.currentTimeMillis(), HttpStatus.BAD_REQUEST, "Bad Request",
-						"Sintaxe inválida.", null);
+			logger.info("Chamando p método para criar uma pauta.");
 
-				logger.debug("Bad Request - Sintaxe inválida, body null.");
-
-				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
-			} else {
-				obj = servicePauta.insertPauta(obj);
-				URI uri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(obj.getId())
-						.toUri();
-
-				Response response = new Response();
-				response.setMessage("Pauta criada com sucesso!");
-				response.setStatus("OK");
-				return ResponseEntity.created(uri).body(response);
-			}
+			ResponseEntity<?> response = servicePauta.insertPauta(obj);
+			return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
 		} catch (Exception e) {
 			StandardError err = new StandardError(System.currentTimeMillis(), HttpStatus.INTERNAL_SERVER_ERROR,
 					"Internal Server Erro", "", null);
@@ -94,17 +66,10 @@ public class PautaResource {
 	public ResponseEntity<?> insertVotacao(@RequestBody Votacao obj) {
 		logger.debug("InsertVotacao - begin.");
 		try {
-			ResponseEntity<?> response = serviceVotacao.insertVoto(obj);
+			logger.info("Chamando p método para inserir o voto.");
 
-			if (response.getStatusCodeValue() == 200) {
-				return ResponseEntity.status(HttpStatus.OK).body(response.getBody());
-			} else if (response.getStatusCodeValue() == 202) {
-				return ResponseEntity.status(HttpStatus.ACCEPTED).body(response.getBody());
-			} else if (response.getStatusCodeValue() == 404) {
-				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response.getBody());
-			} else {
-				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response.getBody());
-			}
+			ResponseEntity<?> response = serviceVotacao.insertVoto(obj);
+			return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
 		} catch (Exception e) {
 			StandardError err = new StandardError(System.currentTimeMillis(), HttpStatus.INTERNAL_SERVER_ERROR,
 					"Internal Server Erro", "", null);
@@ -118,15 +83,15 @@ public class PautaResource {
 	public ResponseEntity<?> resultPauta(@PathVariable Integer id) {
 		logger.debug("ResultPauta - begin");
 
-		ResponseResultado resultado = serviceVotacao.findResultado(id);
-		if (resultado == null) {
-			StandardError err = new StandardError(System.currentTimeMillis(), HttpStatus.NOT_FOUND, "Not Found",
-					"O servidor não pode encontrar o recurso solicitado.", null);
+		try {
+			ResponseEntity<?> response = serviceVotacao.findResultado(id);
+			return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+		} catch (Exception e) {
+			StandardError err = new StandardError(System.currentTimeMillis(), HttpStatus.INTERNAL_SERVER_ERROR,
+					"Internal Server Erro", "", null);
 
-			logger.debug("Not Found - O servidor não pode encontrar o recurso solicitado.");
-
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(err);
+			logger.error("Internal Server Erro.", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(err);
 		}
-		return ResponseEntity.ok().body(resultado);
 	}
 }

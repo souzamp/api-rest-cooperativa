@@ -62,40 +62,52 @@ public class VotacaoService {
 		}
 	}
 
-	public ResponseResultado findResultado(Integer id) {
+	public ResponseEntity<?> findResultado(Integer id) {
 		logger.debug("FindResuldo - begin");
 
-		List<Votacao> votacao = votacaoRepository.findResultadoPauta(id);
-		int votoNao = 0;
-		int votoSim = 0;
-		int totalVotos = 0;
+		try {
+			List<Votacao> votacao = votacaoRepository.findResultadoPauta(id);
+			int votoNao = 0;
+			int votoSim = 0;
+			int totalVotos = 0;
 
-		if (!votacao.isEmpty()) {
-			logger.debug("Contabilizando os votos.");
+			if (!votacao.isEmpty()) {
+				logger.debug("Contabilizando os votos.");
 
-			for (Votacao votacao2 : votacao) {
-				if (votacao2.getVoto().equals("Não")) {
-					votoNao += 1;
-				} else if (votacao2.getVoto().equals("Sim")) {
-					votoSim += 1;
+				for (Votacao votacao2 : votacao) {
+					if (votacao2.getVoto().equals("Não")) {
+						votoNao += 1;
+					} else if (votacao2.getVoto().equals("Sim")) {
+						votoSim += 1;
+					}
+					totalVotos += 1;
 				}
-				totalVotos += 1;
+				Optional<Pauta> pauta = pautaRepository.findById(id);
+
+				logger.debug("Resultado da votação -  Nome da Pauta: " + pauta.get().getPauta() + " | total de votos: "
+						+ totalVotos + " | votos sim: " + votoSim + " | votos não: " + votoNao);
+
+				ResponseResultado responseResultado = new ResponseResultado();
+				responseResultado.setNomePauta(pauta.get().getPauta());
+				responseResultado.setTotalVotos(String.valueOf(totalVotos));
+				responseResultado.setVotosSim(String.valueOf(votoSim));
+				responseResultado.setVotosNao(String.valueOf(votoNao));
+
+				return ResponseEntity.status(HttpStatus.OK).body(responseResultado);
+			} else {
+				StandardError err = new StandardError(System.currentTimeMillis(), HttpStatus.NOT_FOUND, "Not Found",
+						"O servidor não pode encontrar o recurso solicitado.", null);
+
+				logger.debug("Not Found - O servidor não pode encontrar o recurso solicitado.");
+
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body(err);
 			}
-			Optional<Pauta> pauta = pautaRepository.findById(id);
+		} catch (Exception e) {
+			StandardError err = new StandardError(System.currentTimeMillis(), HttpStatus.INTERNAL_SERVER_ERROR,
+					"Internal Server Erro", "", null);
 
-			logger.debug("Resultado da votação -  Nome da Pauta: " + pauta.get().getPauta() + " | total de votos: "
-					+ totalVotos + " | votos sim: " + votoSim + " | votos não: " + votoNao);
-
-			ResponseResultado responseResultado = new ResponseResultado();
-			responseResultado.setNomePauta(pauta.get().getPauta());
-			responseResultado.setTotalVotos(String.valueOf(totalVotos));
-			responseResultado.setVotosSim(String.valueOf(votoSim));
-			responseResultado.setVotosNao(String.valueOf(votoNao));
-			return responseResultado;
-		} else {
-			logger.debug("Resultado não encontrado pelo Id passado.");
+			logger.error("Internal Server Erro.", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(err);
 		}
-
-		return null;
 	}
 }
