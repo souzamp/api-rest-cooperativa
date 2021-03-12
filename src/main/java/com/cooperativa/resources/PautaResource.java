@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -29,7 +30,7 @@ public class PautaResource {
 
 	@Autowired
 	private PautaService servicePauta;
-
+	@Autowired
 	private VotacaoService serviceVotacao;
 
 	@RequestMapping(value = "/{id}", method = RequestMethod.GET)
@@ -39,20 +40,21 @@ public class PautaResource {
 		try {
 			Optional<Pauta> obj = servicePauta.find(id);
 			if (!obj.isPresent()) {
-				StandardError err = new StandardError(System.currentTimeMillis(), 404, "Not Found",
+				StandardError err = new StandardError(System.currentTimeMillis(), HttpStatus.NOT_FOUND, "Not Found",
 						"O servidor não pode encontrar o recurso solicitado.", null);
 
 				logger.debug("Not Found - O servidor não pode encontrar o recurso solicitado.");
 
-				return ResponseEntity.status(404).body(err);
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body(err);
 			} else {
 				return ResponseEntity.ok().body(obj);
 			}
 		} catch (Exception e) {
-			StandardError err = new StandardError(System.currentTimeMillis(), 500, "Internal Server Erro", "", null);
+			StandardError err = new StandardError(System.currentTimeMillis(), HttpStatus.INTERNAL_SERVER_ERROR,
+					"Internal Server Erro", "", null);
 
 			logger.error("Internal Server Erro.", e);
-			return ResponseEntity.status(500).body(err);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(err);
 		}
 
 	}
@@ -62,13 +64,13 @@ public class PautaResource {
 		logger.info("Criando uma nova Pauta.");
 
 		try {
-			if (obj == null) {
-				StandardError err = new StandardError(System.currentTimeMillis(), 400, "Bad Request",
+			if (obj == null | obj.getPauta() == null) {
+				StandardError err = new StandardError(System.currentTimeMillis(), HttpStatus.BAD_REQUEST, "Bad Request",
 						"Sintaxe inválida.", null);
 
 				logger.debug("Bad Request - Sintaxe inválida, body null.");
 
-				return ResponseEntity.status(400).body(err);
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
 			} else {
 				obj = servicePauta.insertPauta(obj);
 				URI uri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(obj.getId())
@@ -76,13 +78,15 @@ public class PautaResource {
 
 				Response response = new Response();
 				response.setMessage("Pauta criada com sucesso!");
+				response.setStatus("OK");
 				return ResponseEntity.created(uri).body(response);
 			}
 		} catch (Exception e) {
-			StandardError err = new StandardError(System.currentTimeMillis(), 500, "Internal Server Erro", "", null);
+			StandardError err = new StandardError(System.currentTimeMillis(), HttpStatus.INTERNAL_SERVER_ERROR,
+					"Internal Server Erro", "", null);
 
 			logger.error("Internal Server Erro.", e);
-			return ResponseEntity.status(500).body(err);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(err);
 		}
 	}
 
@@ -92,16 +96,21 @@ public class PautaResource {
 		try {
 			ResponseEntity<?> response = serviceVotacao.insertVoto(obj);
 
-			if (response.getStatusCodeValue() == 200 | response.getStatusCodeValue() == 202) {
-				return ResponseEntity.status(200).body(response.getBody());
+			if (response.getStatusCodeValue() == 200) {
+				return ResponseEntity.status(HttpStatus.OK).body(response.getBody());
+			} else if (response.getStatusCodeValue() == 202) {
+				return ResponseEntity.status(HttpStatus.ACCEPTED).body(response.getBody());
+			} else if (response.getStatusCodeValue() == 404) {
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response.getBody());
 			} else {
-				return ResponseEntity.status(500).body(response.getBody());
+				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response.getBody());
 			}
 		} catch (Exception e) {
-			StandardError err = new StandardError(System.currentTimeMillis(), 500, "Internal Server Erro", "", null);
+			StandardError err = new StandardError(System.currentTimeMillis(), HttpStatus.INTERNAL_SERVER_ERROR,
+					"Internal Server Erro", "", null);
 
 			logger.error("Internal Server Erro.", e);
-			return ResponseEntity.status(500).body(err);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(err);
 		}
 	}
 
@@ -109,7 +118,15 @@ public class PautaResource {
 	public ResponseEntity<?> resultPauta(@PathVariable Integer id) {
 		logger.debug("ResultPauta - begin");
 
-		ResponseResultado findResuldo = serviceVotacao.findResuldo(id);
-		return ResponseEntity.ok().body(findResuldo);
+		ResponseResultado resultado = serviceVotacao.findResultado(id);
+		if (resultado == null) {
+			StandardError err = new StandardError(System.currentTimeMillis(), HttpStatus.NOT_FOUND, "Not Found",
+					"O servidor não pode encontrar o recurso solicitado.", null);
+
+			logger.debug("Not Found - O servidor não pode encontrar o recurso solicitado.");
+
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(err);
+		}
+		return ResponseEntity.ok().body(resultado);
 	}
 }

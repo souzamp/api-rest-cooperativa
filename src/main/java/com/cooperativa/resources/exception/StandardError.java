@@ -2,18 +2,20 @@ package com.cooperativa.resources.exception;
 
 import java.io.Serializable;
 
+import org.springframework.http.HttpStatus;
+
 public class StandardError implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	private Long timestamp;
-	private Integer status;
+	private HttpStatus status;
 	private String error;
 	private String message; 
 
 	public StandardError() {
 	}
 
-	public StandardError(Long timestamp, Integer status, String error, String message, String path) {
+	public StandardError(Long timestamp, HttpStatus status, String error, String message, String path) {
 		super();
 		this.timestamp = timestamp;
 		this.status = status;
@@ -29,11 +31,11 @@ public class StandardError implements Serializable {
 		this.timestamp = timestamp;
 	}
 
-	public Integer getStatus() {
+	public HttpStatus getStatus() {
 		return status;
 	}
 
-	public void setStatus(Integer status) {
+	public void setStatus(HttpStatus status) {
 		this.status = status;
 	}
 

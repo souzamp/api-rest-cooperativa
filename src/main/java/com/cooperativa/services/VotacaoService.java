@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +23,7 @@ import com.cooperativa.resources.exception.StandardError;
 public class VotacaoService {
 	private static Logger logger = LoggerFactory.getLogger(PautaResource.class);
 
+	@Autowired
 	private VotacaoRepository votacaoRepository;
 	@Autowired
 	private PautaRepository pautaRepository;
@@ -29,27 +31,38 @@ public class VotacaoService {
 	public ResponseEntity<?> insertVoto(Votacao obj) {
 		logger.debug("InsertVoto - begin");
 		try {
-			Optional<Votacao> votacao = votacaoRepository.findByCpf(obj.getCpfAssociado());
-			Response response = new Response();
-			if (!votacao.isPresent()) {
-				votacaoRepository.save(obj);
+			if (obj.getCpfAssociado() != null && obj.getCpfAssociado().isEmpty() != true) {
 
-				response.setMessage("Voto inserido com sucesso!");
-				return ResponseEntity.status(200).body(response);
+				Optional<Votacao> votacao = votacaoRepository.findByCpf(obj.getCpfAssociado());
+				Response response = new Response();
+				if (!votacao.isPresent()) {
+					votacaoRepository.save(obj);
+
+					response.setMessage("Voto inserido com sucesso!");
+					response.setStatus("OK");
+					return ResponseEntity.status(HttpStatus.OK).body(response);
+				} else {
+					response.setMessage("Associado já votou!");
+					response.setStatus("NOK");
+					return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
+				}
 			} else {
-				response.setMessage("Associado já votou!");
-				return ResponseEntity.status(202).body(response);
-			}
+				StandardError err = new StandardError(System.currentTimeMillis(), HttpStatus.BAD_REQUEST, "Bad Request",
+						"", null);
 
+				logger.error("Bad Request.", err);
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
+			}
 		} catch (Exception e) {
-			StandardError err = new StandardError(System.currentTimeMillis(), 500, "Internal Server Erro", "", null);
+			StandardError err = new StandardError(System.currentTimeMillis(), HttpStatus.INTERNAL_SERVER_ERROR,
+					"Internal Server Erro", "", null);
 
 			logger.error("Internal Server Erro.", e);
-			return ResponseEntity.status(500).body(err);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(err);
 		}
 	}
 
-	public ResponseResultado findResuldo(Integer id) {
+	public ResponseResultado findResultado(Integer id) {
 		logger.debug("FindResuldo - begin");
 
 		List<Votacao> votacao = votacaoRepository.findResultadoPauta(id);
