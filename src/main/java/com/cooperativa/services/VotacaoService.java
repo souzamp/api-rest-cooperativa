@@ -6,10 +6,13 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
+import com.cooperativa.domain.ConsultaCpfBody;
 import com.cooperativa.domain.Pauta;
 import com.cooperativa.domain.Response;
 import com.cooperativa.domain.ResponseResultado;
@@ -27,22 +30,42 @@ public class VotacaoService {
 	private VotacaoRepository votacaoRepository;
 	@Autowired
 	private PautaRepository pautaRepository;
+	@Autowired
+	private RestTemplate restTemplate;
 
 	public ResponseEntity<?> insertVoto(Votacao obj) {
 		logger.debug("InsertVoto - begin");
 		try {
 			if (obj.getCpfAssociado() != null && obj.getCpfAssociado().isEmpty() != true) {
 
-				Optional<Votacao> votacao = votacaoRepository.findByCpf(obj.getCpfAssociado());
-				Response response = new Response();
-				if (!votacao.isPresent()) {
-					votacaoRepository.save(obj);
+				String uri = "https://user-info.herokuapp.com/users/";
+				uri = uri.concat(obj.getCpfAssociado());
 
-					response.setMessage("Voto inserido com sucesso!");
-					response.setStatus("OK");
-					return ResponseEntity.status(HttpStatus.OK).body(response);
+				ConsultaCpfBody statusCpf = restTemplate.getForObject(uri, ConsultaCpfBody.class);
+				logger.debug("Resultado da Chamada ao user-info.herokuapp:    " + statusCpf.toString());
+
+				if (statusCpf.getStatus().equals("ABLE_TO_VOTE")) {
+					logger.debug("Entrou no if ABLE_TO_VOTE.");
+
+					Optional<Votacao> votacao = votacaoRepository.findByCpf(obj.getCpfAssociado());
+					Response response = new Response();
+
+					if (!votacao.isPresent()) {
+						votacaoRepository.save(obj);
+
+						response.setMessage("Voto inserido com sucesso!");
+						response.setStatus("OK");
+						return ResponseEntity.status(HttpStatus.OK).body(response);
+					} else {
+						response.setMessage("Associado já votou!");
+						response.setStatus("NOK");
+						return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
+					}
 				} else {
-					response.setMessage("Associado já votou!");
+					logger.debug("Entrou no if UNABLE_TO_VOTE.");
+
+					Response response = new Response();
+					response.setMessage("Associado UNABLE_TO_VOTE.");
 					response.setStatus("NOK");
 					return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
 				}
@@ -109,5 +132,10 @@ public class VotacaoService {
 			logger.error("Internal Server Erro.", e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(err);
 		}
+	}
+
+	@Bean
+	public RestTemplate restTemplate() {
+		return new RestTemplate();
 	}
 }
