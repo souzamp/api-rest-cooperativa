@@ -101,10 +101,20 @@ class ApiRestCooperativaApplicationTests {
 	}
 	
 	/*
-	 * Votando em uma nova pauta, status 201.
+	 * Votando em uma nova pauta, status 202.
 	 * */
 	@Test
 	void case9() throws Exception {
+		Votacao voto = new Votacao(null, "28666189045","Sim",1);
+		mockMvc.perform(post("/pautas/votacao").contentType("application/json").content(objectMapper.writeValueAsString(voto)))
+				.andExpect(status().isAccepted());
+	}
+	
+	/*
+	 * Votando em uma nova pauta, status 200.
+	 * */
+	@Test
+	void case10() throws Exception {
 		Votacao voto = new Votacao(null, "28666189045","Sim",1);
 		mockMvc.perform(post("/pautas/votacao").contentType("application/json").content(objectMapper.writeValueAsString(voto)))
 				.andExpect(status().isOk());
@@ -114,7 +124,7 @@ class ApiRestCooperativaApplicationTests {
 	 * Votando em uma nova pauta. Mas passando "cpfAssociado"  vazio, status 400.
 	 * */
 	@Test
-	void case10() throws Exception {
+	void case11() throws Exception {
 		Votacao voto = new Votacao(null, "","Sim",1);
 		mockMvc.perform(post("/pautas/votaca").contentType("application/json").content(objectMapper.writeValueAsString(voto)))
 				.andExpect(status().isBadRequest());
@@ -124,7 +134,7 @@ class ApiRestCooperativaApplicationTests {
 	 * Votando em uma nova pauta. Mas passando a endpoint errado, status 404.
 	 * */
 	@Test
-	void case11() throws Exception {
+	void case12() throws Exception {
 		Votacao voto = new Votacao(null, "28666189045","Sim",1);
 		mockMvc.perform(post("/votacao").contentType("application/json").content(objectMapper.writeValueAsString(voto)))
 				.andExpect(status().isNotFound());

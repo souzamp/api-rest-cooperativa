@@ -58,7 +58,7 @@ public class VotacaoService {
 						return ResponseEntity.status(HttpStatus.OK).body(response);
 					} else {
 						response.setMessage("Associado já votou!");
-						response.setStatus("NOK");
+						response.setStatus("OK");
 						return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
 					}
 				} else {
@@ -66,7 +66,7 @@ public class VotacaoService {
 
 					Response response = new Response();
 					response.setMessage("Associado UNABLE_TO_VOTE.");
-					response.setStatus("NOK");
+					response.setStatus("OK");
 					return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
 				}
 			} else {
