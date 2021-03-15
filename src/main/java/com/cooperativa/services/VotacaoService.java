@@ -45,7 +45,7 @@ public class VotacaoService {
 				logger.debug("Resultado da Chamada ao user-info.herokuapp:    " + statusCpf.toString());
 
 				if (statusCpf.getStatus().equals("ABLE_TO_VOTE")) {
-					logger.debug("Entrou no if ABLE_TO_VOTE.");
+					logger.debug("Associado ABLE_TO_VOTE.");
 
 					Optional<Votacao> votacao = votacaoRepository.findByCpf(obj.getCpfAssociado());
 					Response response = new Response();
@@ -62,7 +62,7 @@ public class VotacaoService {
 						return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
 					}
 				} else {
-					logger.debug("Entrou no if UNABLE_TO_VOTE.");
+					logger.debug("Associado UNABLE_TO_VOTE.");
 
 					Response response = new Response();
 					response.setMessage("Associado UNABLE_TO_VOTE.");

@@ -15,6 +15,7 @@ import com.cooperativa.domain.Pauta;
 import com.cooperativa.domain.Votacao;
 import com.cooperativa.resources.exception.StandardError;
 import com.cooperativa.services.PautaService;
+import com.cooperativa.services.ResultadoRMQService;
 import com.cooperativa.services.VotacaoService;
 
 import io.swagger.annotations.ApiOperation;
@@ -28,6 +29,8 @@ public class PautaResource {
 	private PautaService servicePauta;
 	@Autowired
 	private VotacaoService serviceVotacao;
+	@Autowired
+	private ResultadoRMQService resultadoService;
 
 	@ApiOperation("Busca por id")
 	@RequestMapping(value = "/{id}", method = RequestMethod.GET)
@@ -44,16 +47,14 @@ public class PautaResource {
 			logger.error("Internal Server Erro.", e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(err);
 		}
-
 	}
 
 	@ApiOperation("Cria uma pauta")
 	@RequestMapping(method = RequestMethod.POST)
 	public ResponseEntity<?> insert(@RequestBody Pauta obj) {
 		logger.info("Criando uma nova Pauta.");
-
 		try {
-			logger.info("Chamando p método para criar uma pauta.");
+			logger.info("Chamando o método para criar uma pauta.");
 
 			ResponseEntity<?> response = servicePauta.insertPauta(obj);
 			return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
@@ -71,7 +72,7 @@ public class PautaResource {
 	public ResponseEntity<?> insertVotacao(@RequestBody Votacao obj) {
 		logger.debug("InsertVotacao - begin.");
 		try {
-			logger.info("Chamando p método para inserir o voto.");
+			logger.info("Chamando o método para inserir o voto.");
 
 			ResponseEntity<?> response = serviceVotacao.insertVoto(obj);
 			return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
@@ -91,6 +92,11 @@ public class PautaResource {
 
 		try {
 			ResponseEntity<?> response = serviceVotacao.findResultado(id);
+			
+			if (response.getStatusCode() == HttpStatus.OK) {
+				resultadoService.sendResultadoToRabbit(response.getBody());
+			}
+			
 			return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
 		} catch (Exception e) {
 			StandardError err = new StandardError(System.currentTimeMillis(), HttpStatus.INTERNAL_SERVER_ERROR,
