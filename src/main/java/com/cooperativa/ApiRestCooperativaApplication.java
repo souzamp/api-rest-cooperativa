@@ -10,8 +10,8 @@ public class ApiRestCooperativaApplication {
 	private static Logger logger = LoggerFactory.getLogger(ApiRestCooperativaApplication.class);
 
 	public static void main(String[] args) {
+		logger.debug("Inciando a Api Cooperativa!");
 		SpringApplication.run(ApiRestCooperativaApplication.class, args);
-		logger.debug("Inciando a Api Votação!");
 	}
 
 }
